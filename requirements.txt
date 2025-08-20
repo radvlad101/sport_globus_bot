@@ -2,4 +2,4 @@ aiogram>=3.10.0
 aiofiles
 feedparser
 openai
-
+aiohttp
