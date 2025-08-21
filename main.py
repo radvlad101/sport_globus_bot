@@ -62,4 +62,13 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    from aiohttp import web
+    # запускаем web-приложение напрямую
+    app = web.Application()
+    # регистрируем webhook
+    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    # запуск webhook
+    app.on_startup.append(lambda app: bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH))
+    web.run_app(app, port=PORT)
+
