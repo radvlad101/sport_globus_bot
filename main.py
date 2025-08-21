@@ -85,7 +85,7 @@ def main():
         )
 
         # Установка вебхука для Telegram API
-        app.bot.set_webhook(f"{WEBHOOK_URL}")
+        #app.bot.set_webhook(f"{WEBHOOK_URL}")
         logging.info("✅ Вебхук успешно установлен")
 
     except Exception as e:
