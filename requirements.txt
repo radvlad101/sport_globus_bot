@@ -1,6 +1,4 @@
-aiogram>=3.10.0
-aiohttp
+python-telegram-bot==20.6
+httpx==0.25.2
+feedparser==6.0.11
 ai21
-feedparser
-
-
