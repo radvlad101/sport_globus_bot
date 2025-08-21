@@ -1,4 +1,3 @@
-python-telegram-bot==20.6
-httpx==0.25.2
-feedparser==6.0.11
+python-telegram-bot==21.0.1
 ai21
+feedparser
