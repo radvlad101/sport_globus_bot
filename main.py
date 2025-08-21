@@ -81,7 +81,7 @@ def main():
         app.run_webhook(
             listen="0.0.0.0",
             port=port,
-            url_path="/"
+            url_path="/webhook"
         )
 
         # Установка вебхука для Telegram API
