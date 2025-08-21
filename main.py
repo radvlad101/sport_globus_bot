@@ -11,7 +11,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 AI21_API_KEY = os.getenv("AI21_API_KEY")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = "https://sport-globus-bot.onrender.com/webhook"   #os.getenv("WEBHOOK_URL")
 
 logging.basicConfig(level=logging.INFO)
 
