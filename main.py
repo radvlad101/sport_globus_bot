@@ -28,9 +28,16 @@ async def summarize_news(text: str):
     url = "https://api.ai21.com/studio/v1/j1-large/complete"
     headers = {"Authorization": f"Bearer {AI21_API_KEY}"}
     data = {"prompt": f"Сделай краткий пересказ:\n{text}", "maxTokens": 150}
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(url, json=data, headers=headers)
-        return resp.json()['completions'][0]['data']['text']
+        result = resp.json()
+        if "completions" in result:
+            return result['completions'][0]['data']['text']
+        else:
+            logging.error(f"Ошибка AI21: {result}")
+            return "❌ Не удалось получить суммаризацию"
+
 
 async def post_news():
     news_list = await get_sports_news()
