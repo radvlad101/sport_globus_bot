@@ -4,16 +4,14 @@ import feedparser
 from ai21 import AI21Client
 from ai21.models.chat import ChatMessage
 import telegram
-print(telegram.__version__)
-
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # --- Настройки ---
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")  # например "@mychannel"
+TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 AI21_API_KEY = os.getenv("AI21_API_KEY")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # например https://mydomain.com/webhook
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,11 +22,9 @@ ai21_client = AI21Client(api_key=AI21_API_KEY)
 def get_latest_news():
     feed_url = "https://www.sports.ru/rss/all_news.xml"
     feed = feedparser.parse(feed_url)
-
     if not feed.entries:
         logging.error("❌ Нет новостей в RSS")
         return None
-
     item = feed.entries[0]
     return {"title": item.title, "link": item.link, "summary": item.get("summary", "")}
 
@@ -49,13 +45,10 @@ async def post_news(app: Application):
     news = get_latest_news()
     if not news:
         return
-
     summary = summarize_text(news["summary"] or news["title"])
     if not summary:
         summary = "❌ Не удалось получить суммаризацию."
-
     message = f"📰 {news['title']}\n\n{summary}\n\n🔗 Подробнее: {news['link']}"
-
     try:
         await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=message)
         logging.info("✅ Новость опубликована")
@@ -69,17 +62,24 @@ async def post_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- Основной запуск ---
 def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    try:
+        app = Application.builder().token(TELEGRAM_TOKEN).build()
+        app.add_handler(CommandHandler("post_now", post_now))
 
-    # Команда для ручного постинга
-    app.add_handler(CommandHandler("post_now", post_now))
+        # Настройка и запуск вебхука
+        port = int(os.environ.get("PORT", 5000))
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=port,
+            url_path="/"
+        )
 
-    # Вебхук вместо polling
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.getenv("PORT", 5000)),
-        webhook_url=WEBHOOK_URL
-    )
+        # Установка вебхука для Telegram API
+        app.bot.set_webhook(f"{WEBHOOK_URL}")
+        logging.info("✅ Вебхук успешно установлен")
+
+    except Exception as e:
+        logging.error(f"Ошибка при запуске бота: {e}")
 
 if __name__ == "__main__":
     main()
