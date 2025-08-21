@@ -7,9 +7,9 @@ from ai21 import AI21Client
 from ai21.models.chat import ChatMessage
 
 # === Настройки ===
-TELEGRAM_TOKEN = "TELEGRAM_TOKEN"
+TELEGRAM_TOKEN = "8495882876:AAH1xwbeyOqPRkquvz7aijF5iHa6US3IgNg"
 CHANNEL_ID = "@sport_globus"
-AI21_API_KEY = "AI21_API_KEY"
+AI21_API_KEY = "f46255e8-8dfb-4bdb-abf0-cc8eb4450cd0"
 
 logging.basicConfig(level=logging.INFO)
 
