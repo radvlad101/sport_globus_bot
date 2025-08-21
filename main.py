@@ -1,81 +1,99 @@
-import os
-import feedparser
+import asyncio
 import logging
-import httpx
-from aiohttp import web
+import feedparser
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from ai21 import AI21Client
+from ai21.models.chat import ChatMessage
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID", "@sport_globus")
-AI21_API_KEY = os.getenv("AI21_API_KEY")
-WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-PORT = int(os.getenv("PORT", 8080))
+# === Настройки ===
+TELEGRAM_TOKEN = "ТВОЙ_ТОКЕН"
+CHANNEL_ID = "@sport_globus"
+AI21_API_KEY = "ТВОЙ_AI21_KEY"
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# --- функции постинга ---
-async def get_sports_news():
-    feed = feedparser.parse("https://www.sports.ru/rss/all_news.xml")
-    return feed.entries[:1]
+# ====== Клиент AI21 ======
+client = AI21Client(api_key=AI21_API_KEY)
 
-async def summarize_news(text: str):
-    url = "https://api.ai21.com/studio/v1/j1-large/complete"
-    headers = {"Authorization": f"Bearer {AI21_API_KEY}"}
-    data = {"prompt": f"Сделай краткий пересказ:\n{text}", "maxTokens": 150}
 
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(url, json=data, headers=headers)
-        result = resp.json()
-        if "completions" in result:
-            return result['completions'][0]['data']['text']
+# ====== Суммаризация через AI21 ======
+async def summarize_text(text: str) -> str:
+    try:
+        response = client.chat.completions.create(
+            model="jamba-large",
+            messages=[
+                ChatMessage(role="system", content="Ты — бот, делающий краткие спортивные суммаризации."),
+                ChatMessage(role="user", content=f"Суммаризируй коротко спортивную новость:\n\n{text}\n\nКратко:")
+            ],
+            max_tokens=150
+        )
+        return response.output_text.strip()
+    except Exception as e:
+        logging.error(f"AI21 error: {e}")
+        return None
+
+
+# ====== Парсим sports.ru ======
+async def fetch_latest_news():
+    feed_url = "https://www.sports.ru/sports.xml"
+    feed = feedparser.parse(feed_url)
+    if feed.entries:
+        entry = feed.entries[0]
+        title = entry.title
+        link = entry.link
+        summary = await summarize_text(entry.summary)
+
+        text = f"🏆 {title}\n\n"
+        if summary:
+            text += f"{summary}\n\n"
         else:
-            logging.error(f"Ошибка AI21: {result}")
-            return "❌ Не удалось получить суммаризацию"
+            text += "❌ Не удалось получить суммаризацию\n\n"
+        text += f"🔗 Подробнее: {link}"
+
+        return text
+    return None
 
 
-async def post_news():
-    news_list = await get_sports_news()
-    for entry in news_list:
-        summary = await summarize_news(entry.summary)
-        image_url = entry.get('media_content', [{'url': None}])[0]['url']
-        msg = f"🏆 {entry.title}\n\n{summary}\n\n🔗 Подробнее: {entry.link}"
-        if image_url:
-            await bot.send_photo(CHANNEL_ID, photo=image_url, caption=msg)
-        else:
-            await bot.send_message(CHANNEL_ID, msg)
+# ====== Публикуем в канал ======
+async def post_latest_news():
+    news = await fetch_latest_news()
+    if news:
+        await bot.send_message(CHANNEL_ID, news)
 
-# --- ручной пост ---
+
+# ====== Команда /start ======
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer("Привет! Я спорт-бот. Напиши /post_now чтобы запостить свежую новость.")
+
+
+# ====== Команда /post_now ======
 @dp.message(Command("post_now"))
-async def manual_post(message: types.Message):
-    await post_news()
-    await message.answer("✅ Пост сделан вручную!")
+async def cmd_post_now(message: types.Message):
+    await message.answer("⏳ Беру свежую новость...")
+    await post_latest_news()
+    await message.answer("✅ Новость опубликована!")
 
-# --- aiohttp для Render ---
-async def on_startup(app: web.Application):
-    await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH)
 
+# ====== Автопостинг раз в 1 день ======
+async def auto_posting():
+    while True:
+        logging.info("Автопостинг: публикую новость...")
+        await post_latest_news()
+        await asyncio.sleep(24 * 60 * 60)  # ждать 1 день
+
+
+# ====== Запуск ======
 async def main():
-    app = web.Application()
-    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
-    app.on_startup.append(on_startup)
-    web.run_app(app, port=PORT)
+    # Запускаем бота и автопостинг параллельно
+    task_bot = asyncio.create_task(dp.start_polling(bot))
+    task_auto = asyncio.create_task(auto_posting())
+    await asyncio.gather(task_bot, task_auto)
+
 
 if __name__ == "__main__":
-    import asyncio
-    from aiohttp import web
-    # запускаем web-приложение напрямую
-    app = web.Application()
-    # регистрируем webhook
-    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
-    # запуск webhook
-    app.on_startup.append(lambda app: bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH))
-    web.run_app(app, port=PORT)
-
+    asyncio.run(main())

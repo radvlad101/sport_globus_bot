@@ -1,5 +1,5 @@
-aiogram>=3.10.0
-aiofiles
-feedparser
-openai
+aiogram==3.10.0
 aiohttp
+ai21
+feedparser
+
