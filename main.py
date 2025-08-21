@@ -7,11 +7,21 @@ import telegram
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+
+"""
 # --- Настройки ---
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
 AI21_API_KEY = os.getenv("AI21_API_KEY")
 WEBHOOK_URL = "https://sport-globus-bot.onrender.com/webhook"   #os.getenv("WEBHOOK_URL")
+"""
+
+TELEGRAM_TOKEN = "8495882876:AAH1xwbeyOqPRkquvz7aijF5iHa6US3IgNg"
+TELEGRAM_CHANNEL_ID = "@sport_globus"
+AI21_API_KEY = "f46255e8-8dfb-4bdb-abf0-cc8eb4450cd0"
+WEBHOOK_URL = "https://sport-globus-bot.onrender.com/webhook"
+
+
 
 logging.basicConfig(level=logging.INFO)
 
