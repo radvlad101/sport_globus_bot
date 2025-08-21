@@ -3,6 +3,9 @@ import logging
 import feedparser
 from ai21 import AI21Client
 from ai21.models.chat import ChatMessage
+import telegram
+print(telegram.__version__)
+
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
