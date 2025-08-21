@@ -1,4 +1,4 @@
-aiogram==3.10.0
+aiogram>=3.10.0
 aiohttp
 ai21
 feedparser
