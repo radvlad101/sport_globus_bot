@@ -45,7 +45,7 @@ def summarize_text(text: str) -> str:
             model="jamba-large-1.7",
             messages=[ChatMessage(role="user", content=f"Сделай краткое резюме этой новости:\n\n{text}")]
         )
-        return response.outputs[0].content[0].text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"AI21 ошибка: {e}")
         return None
