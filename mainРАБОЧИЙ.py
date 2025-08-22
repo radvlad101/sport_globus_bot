@@ -28,76 +28,15 @@ logging.basicConfig(level=logging.INFO)
 # --- AI21 ---
 ai21_client = AI21Client(api_key=AI21_API_KEY)
 
-
-
-
-
-
-
 # --- Функция получения новости ---
-import requests
-from datetime import datetime, timedelta
-
 def get_latest_news():
-    """
-    Получает самую хайповую футбольную новость за последние 24 часа
-    с использованием Football News Aggregator Live через RapidAPI.
-    """
-    url = "https://football-news-aggregator-live.p.rapidapi.com/news/goal"
-    headers = {
-        "x-rapidapi-host": "football-news-aggregator-live.p.rapidapi.com",
-        "x-rapidapi-key": "68f04a3a21mshd4229987434e348p127273jsnf765e7543638"  # твой ключ
-    }
-
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        print("Ошибка при получении данных:", response.status_code)
+    feed_url = "https://www.sports.ru/rss/all_news.xml"
+    feed = feedparser.parse(feed_url)
+    if not feed.entries:
+        logging.error("❌ Нет новостей в RSS")
         return None
-
-    articles = response.json().get("articles", [])
-    if not articles:
-        print("Нет доступных новостей.")
-        return None
-
-    # Фильтруем новости за последние 24 часа
-    now = datetime.utcnow()
-    yesterday = now - timedelta(days=1)
-    recent_articles = []
-    for article in articles:
-        # пример формата даты: "2025-08-22T09:30:00Z"
-        try:
-            pub_time = datetime.strptime(article["publishedAt"], "%Y-%m-%dT%H:%M:%SZ")
-            if pub_time > yesterday:
-                recent_articles.append(article)
-        except:
-            continue
-
-    if not recent_articles:
-        print("Нет новостей за последние 24 часа.")
-        return None
-
-    # Выбираем самую "хайповую" — по likes, если нет, по длине description
-    sorted_articles = sorted(
-        recent_articles,
-        key=lambda x: x.get("likes", 0) or len(x.get("description", "")),
-        reverse=True
-    )
-
-    top_article = sorted_articles[0]
-    return {
-        "title": top_article["title"],
-        "link": top_article["url"],
-        "summary": top_article.get("description", ""),
-        "published": top_article["publishedAt"]
-    }
-
-
-
-
-
-
-
-
+    item = feed.entries[0]
+    return {"title": item.title, "link": item.link, "summary": item.get("summary", "")}
 
 # --- AI21 суммаризация ---
 def summarize_text(text: str) -> str:
