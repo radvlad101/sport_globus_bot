@@ -97,7 +97,7 @@ async def post_news(app):
             logging.error(f"Error posting Russian news: {e}")
     else:
         logging.warning("No Russian news found.")
-    """
+
     # --- Английская новость с переводом ---
     logging.info("Attempting to get English news...")
     news_en = get_latest_news(language="en")
@@ -119,7 +119,7 @@ async def post_news(app):
         except Exception as e:
             logging.error(f"Error posting English news with translation: {e}")
     else:
-        logging.warning("No English news found.")"""
+        logging.warning("No English news found.")
 
 
 
