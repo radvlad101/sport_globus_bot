@@ -48,7 +48,7 @@ def get_latest_news():
         "q": "football OR soccer",
         "from": from_date,
         "to": to_date,
-        "language": "ru",
+        "language": "en",
         "sortBy": "popularity",
         "pageSize": 10,
         "apiKey": API_KEY
