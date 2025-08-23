@@ -33,7 +33,7 @@ from datetime import datetime, timedelta
 from googletrans import Translator  # pip install googletrans==4.0.0-rc1
 
 API_KEY = "bd6718b87c854edc8baf0880ac7e6992"
-TELEGRAM_CHANNEL_ID = -1001234567890  # <- вставь цифровой chat_id канала
+
 
 translator = Translator()
 
