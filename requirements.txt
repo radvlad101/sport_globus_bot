@@ -4,3 +4,4 @@ ai21
 deep-translator
 requests==2.32.4
 python-dotenv==1.1.1
+feedparser
