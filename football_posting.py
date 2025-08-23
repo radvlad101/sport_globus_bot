@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime
 
-TELEGRAM_CHANNEL_ID = "@your_channel"  # замените на ваш канал
+TELEGRAM_CHANNEL_ID = "@sport_globus"  # замените на ваш канал
 
 LEAGUE_NAMES = {
     "PL": "АПЛ",

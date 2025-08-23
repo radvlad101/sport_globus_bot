@@ -32,6 +32,7 @@ FOOTBALL_API_KEY = "1a351adf0f2692224a02a9741f5039e7"     # https://dashboard.ap
 
 API_KEY = "bd6718b87c854edc8baf0880ac7e6992"
 
+
 logging.basicConfig(level=logging.INFO)
 
 # Ініціалізація клієнтів
