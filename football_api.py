@@ -1,48 +1,53 @@
-# football_data_api.py
 import requests
+import logging
 from typing import List, Dict, Any
-from datetime import datetime, timedelta, timezone
 
-API_BASE_URL = "https://api.football-data.org/v4"
-#leagues = ["PL", "PD", "SA", "BL1", "FL1", "CL", "EL"]
+API_URL = "https://api.football-data.org/v4/competitions/{league}/matches"
 
 def get_fixtures(leagues: List[str], api_key: str, limit_matches: Dict[str, int]) -> Dict[str, Any]:
     """
-    Получает данные о матчах (fixtures) по выбранным лигам.
-
-    :param leagues: список кодов лиг (например ["PL", "PD", "SA"] для АПЛ, Ла Лига, Серия А)
-    :param api_key: API ключ для football-data.org
-    :param limit_matches: словарь {league_code: количество_матчей}, сколько ближайших матчей выводить
-    :return: словарь с результатами (JSON)
-    """
-
-    headers = {
-        "X-Auth-Token": api_key
+    Получаем ближайшие матчи по выбранным лигам.
+    Возвращает dict:
+    {
+      "APL": [ { "homeTeam": {...}, "awayTeam": {...}, "odds": {...} }, ... ],
+      "LaLiga": [...],
+      ...
     }
+    """
+    headers = {"X-Auth-Token": api_key}
+    all_fixtures: Dict[str, Any] = {}
 
-    results = {}
-    today = datetime.now(timezone.utc)             # текущая дата UTC (offset-aware)
-    next_week = today + timedelta(days=7)          # дата через неделю
+    for league in leagues:
+        try:
+            url = API_URL.format(league=league)
+            resp = requests.get(url, headers=headers, timeout=15)
+            resp.raise_for_status()
 
-    for league_code in leagues:
-        url = f"{API_BASE_URL}/competitions/{league_code}/matches"
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            results[league_code] = {"error": response.text}
-            continue
+            data = resp.json()
+            matches = data.get("matches", [])
+            logging.debug(f"[DEBUG] Лига {league} вернула {len(matches)} матчей")
 
-        data = response.json()
-        matches = data.get("matches", [])
+            if matches:
+                logging.debug(f"[DEBUG] Пример матча {league}: {matches[0]}")
 
-        # фильтр по ближайшей неделе
-        upcoming_matches = []
-        for match in matches:
-            match_date = datetime.fromisoformat(match["utcDate"].replace("Z", "+00:00"))
-            if today <= match_date <= next_week:
-                upcoming_matches.append(match)
+            # ограничиваем кол-во матчей
+            max_matches = limit_matches.get(league, len(matches))
+            filtered = []
 
-        # ограничение по количеству матчей для этой лиги
-        limit = limit_matches.get(league_code, 5)
-        results[league_code] = upcoming_matches[:limit]
+            for match in matches[:max_matches]:
+                fixture = {
+                    "homeTeam": match.get("homeTeam", {}),
+                    "awayTeam": match.get("awayTeam", {}),
+                    "utcDate": match.get("utcDate"),
+                    "status": match.get("status"),
+                    "odds": match.get("odds", {})  # ⚽ если API отдает коэффициенты
+                }
+                filtered.append(fixture)
 
-    return results
+            all_fixtures[league] = filtered
+
+        except Exception as e:
+            logging.error(f"[ERROR] Не удалось получить матчи для {league}: {e}")
+            all_fixtures[league] = []
+
+    return all_fixtures
