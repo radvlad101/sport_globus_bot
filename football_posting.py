@@ -51,40 +51,64 @@ async def safe_send_message(bot, chat_id, text: str):
         logging.error(f"[FAIL] Ошибка при отправке в {chat_id}: {e}")
 
 
+import logging
+
+async def safe_send_message(app, chat_id, text):
+    """Безопасная отправка сообщений с логированием ошибок"""
+    try:
+        await app.bot.send_message(chat_id=chat_id, text=text)
+        logging.info("[DEBUG] Сообщение успешно отправлено в %s", chat_id)
+    except Exception as e:
+        logging.error("[ERROR] Ошибка при отправке сообщения в %s: %s", chat_id, e)
+
+
 async def post_fixtures_with_odds(app, fixtures_data):
-    """
-    Асинхронно постит матчи с прогнозами/odds в Telegram.
-    """
-    for league_code, matches in fixtures_data.items():
-        if not matches:
-            logging.info(f"[DEBUG] Нет матчей для лиги {league_code}")
-            continue
+    """Формируем и постим список матчей с коэффициентами"""
+    logging.info("[DEBUG] Начинаем формирование поста (матчей: %s)", len(fixtures_data))
 
-        league_name = LEAGUE_NAMES.get(league_code, league_code)
-        logging.info(f"[DEBUG] Формируем пост для лиги {league_name} ({len(matches)} матчей)")
+    post_lines = []
+    missing_odds_count = 0
 
-        caption_lines = [f"⚽ Ближайшие матчи — {league_name}\n"]
+    for match in fixtures_data:
+        home = match["homeTeam"]["name"]
+        away = match["awayTeam"]["name"]
+        utc_date = match["utcDate"]
 
-        for match in matches:
-            home = match["homeTeam"]["name"]
-            away = match["awayTeam"]["name"]
-            match_time = datetime.fromisoformat(match["utcDate"].replace("Z", "+00:00"))
-            match_time_str = match_time.strftime("%d.%m %H:%M UTC")
+        # Коэффициенты
+        if "odds" in match and match["odds"]:
+            odds = match["odds"]
 
-            odds_text = ""
-            prob_text = ""
-            if "odds" in match:
-                odds = match["odds"]
-                odds_text = f"П1: {odds['homeWin']} X: {odds['draw']} П2: {odds['awayWin']}"
+            home_odds = odds.get("homeWin", "—")
+            draw_odds = odds.get("draw", "—")
+            away_odds = odds.get("awayWin", "—")
+
+            odds_text = f"П1: {home_odds} X: {draw_odds} П2: {away_odds}"
+
+            # Если все три коэффициента есть → считаем вероятность
+            if all(isinstance(x, (int, float)) for x in [home_odds, draw_odds, away_odds]):
                 probs = calculate_probabilities(odds)
-                prob_text = f" | Вероятность: {home} {probs['home']}% - X {probs['draw']}% - {away} {probs['away']}%"
+                prob_text = (
+                    f" | Вероятность: {home} {probs['home']}% - "
+                    f"X {probs['draw']}% - {away} {probs['away']}%"
+                )
+            else:
+                prob_text = ""
+                missing_odds_count += 1
 
-            caption_lines.append(
-                f"{match_time_str} — {home} vs {away}\n{odds_text}{prob_text}\n"
-            )
+        else:
+            odds_text = "Коэффициенты пока не доступны"
+            prob_text = ""
+            missing_odds_count += 1
 
-        caption = "\n".join(caption_lines)
-        logging.debug(f"[DEBUG] Пост для {league_name}:\n{caption}")
+        post_lines.append(f"{home} vs {away} ({utc_date})\n{odds_text}{prob_text}")
 
-        # 🔹 безопасная отправка
-        await safe_send_message(app.bot, TELEGRAM_CHANNEL_ID, caption)
+    # Сборка поста
+    post_text = "⚽ Ближайшие матчи:\n\n" + "\n\n".join(post_lines)
+
+    # Логируем инфо
+    logging.info("[DEBUG] Пост сформирован. Всего матчей: %s | Без коэффициентов: %s",
+                 len(fixtures_data), missing_odds_count)
+
+    # Отправка в канал
+    await safe_send_message(app, "@sport_globus", post_text)
+
