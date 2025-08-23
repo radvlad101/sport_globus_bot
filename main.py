@@ -79,38 +79,50 @@ def get_latest_news(language="ru"):
 # Функція публікації новин
 # Функція публікації новин
 async def post_news(app):
-    """Публікує новини в Telegram-канал."""
     from telegram import InputMediaPhoto
 
-    # --- Російська новина ---
+    # --- Русская новость ---
+    logging.info("Attempting to get Russian news...")
     news_ru = get_latest_news(language="ru")
     if news_ru:
-        caption = f"📰 {news_ru['title']}\n\n{news_ru['summary']}\n\n🔗 Детальніше: {news_ru['link']}"
+        logging.info("Russian news found. Attempting to post...")
+        caption = f"📰 {news_ru['title']}\n\n{news_ru['summary']}\n\n🔗 Подробнее: {news_ru['link']}"
         try:
             if news_ru.get("image"):
                 await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_ru["image"], caption=caption)
             else:
                 await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
+            logging.info("Russian news posted successfully.")
         except Exception as e:
-            logging.error(f"Помилка відправлення російської новини: {e}")
+            logging.error(f"Error posting Russian news: {e}")
+    else:
+        logging.warning("No Russian news found.")
 
-    # --- Англійська новина з перекладом (виправлено на deep_translator) ---
+    # --- Английская новость с переводом ---
+    logging.info("Attempting to get English news...")
     news_en = get_latest_news(language="en")
     if news_en:
+        logging.info("English news found. Attempting to translate and post...")
         try:
-            # Используем синхронный вызов, поэтому 'await' не нужен
             translator = GoogleTranslator(source='en', target='ru')
             title_ru = translator.translate(news_en["title"])
             summary_ru = translator.translate(news_en.get("summary", ""))
+            logging.info("Translation successful.")
 
-            caption = f"📰 {title_ru}\n\n{summary_ru}\n\n🔗 Детальніше: {news_en['link']}"
+            caption = f"📰 {title_ru}\n\n{summary_ru}\n\n🔗 Подробнее: {news_en['link']}"
 
             if news_en.get("image"):
                 await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_en["image"], caption=caption)
             else:
                 await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
+            logging.info("English news posted successfully.")
         except Exception as e:
-            logging.error(f"Помилка відправлення англійської новини з перекладом: {e}")
+            logging.error(f"Error posting English news with translation: {e}")
+    else:
+        logging.warning("No English news found.")
+
+
+
 
 # Функція сумаризації
 def summarize_text(text: str) -> str:
