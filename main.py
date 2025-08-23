@@ -82,31 +82,47 @@ def get_latest_news(language="ru"):
     }
 
 
-async def post_news(app):
-    from telegram import InputMediaPhoto
+from googletrans import Translator
 
-    # --- Русская новость ---
-    news_ru = get_latest_news(language="ru")
-    if news_ru:
-        caption = f"📰 {news_ru['title']}\n\n{news_ru['summary']}\n\n🔗 Подробнее: {news_ru['link']}"
-        if news_ru.get("image"):
-            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_ru["image"], caption=caption)
-        else:
-            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
+translator = Translator()
 
-    # --- Английская новость с переводом ---
-    news_en = get_latest_news(language="en")
-    if news_en:
-        translation = await translator.translate(news_en["title"], src="en", dest="ru")
-        title_ru = translation.text
-        summary_ru = translator.translate(news_en.get("summary", ""), src="en", dest="ru").text
-        caption = f"📰 {title_ru}\n\n{summary_ru}\n\n🔗 Подробнее: {news_en['link']}"
-        if news_en.get("image"):
-            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_en["image"], caption=caption)
-        else:
-            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
+async def post_news(app: Application):
+    news_en = get_latest_news()  # твоя функция, возвращает dict с keys: title, description, urlToImage, url
 
+    if not news_en:
+        return
 
+    # Синхронный перевод
+    title_ru = translator.translate(news_en["title"], src="en", dest="ru").text
+    description_ru = translator.translate(news_en.get("description", ""), src="en", dest="ru").text
+
+    # Английский пост
+    caption_en = f"📰 {news_en['title']}\n\n{news_en.get('description', '')}\n\n🔗 Подробнее: {news_en['url']}"
+    if news_en.get("urlToImage"):
+        try:
+            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_en["urlToImage"], caption=caption_en)
+        except Exception as e:
+            logging.error(f"Ошибка публикации английского поста: {e}")
+    else:
+        try:
+            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption_en)
+        except Exception as e:
+            logging.error(f"Ошибка публикации английского поста: {e}")
+
+    # Русский пост
+    caption_ru = f"📰 {title_ru}\n\n{description_ru}\n\n🔗 Подробнее: {news_en['url']}"
+    if news_en.get("urlToImage"):
+        try:
+            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_en["urlToImage"], caption=caption_ru)
+        except Exception as e:
+            logging.error(f"Ошибка публикации русского поста: {e}")
+    else:
+        try:
+            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption_ru)
+        except Exception as e:
+            logging.error(f"Ошибка публикации русского поста: {e}")
+
+    logging.info("✅ Новости опубликованы (EN + RU)")
 
 
 
