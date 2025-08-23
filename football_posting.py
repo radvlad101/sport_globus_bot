@@ -14,6 +14,35 @@ LEAGUE_NAMES = {
     "CL": "Лига Чемпионов",
     "EL": "Лига Европы"
 }
+from datetime import datetime, timedelta, timezone
+
+def filter_fixtures_next_week(fixtures_data, limit_matches):
+    """
+    Возвращает будущие матчи на ближайшие 7 дней, с ограничением по лигам.
+    fixtures_data: dict с лигами -> списком матчей
+    limit_matches: dict с лигами -> максимальное количество матчей
+    """
+    now = datetime.now(timezone.utc)
+    next_week = now + timedelta(days=7)
+
+    upcoming_fixtures = {}
+
+    for league_code, matches in fixtures_data.items():
+        future_matches = []
+
+        for match in matches:
+            match_time = datetime.fromisoformat(match["utcDate"].replace("Z", "+00:00"))
+            if now <= match_time <= next_week:
+                future_matches.append(match)
+
+        # Ограничиваем по количеству матчей
+        max_count = limit_matches.get(league_code, len(future_matches))
+        upcoming_fixtures[league_code] = future_matches[:max_count]
+
+    return upcoming_fixtures
+
+
+
 async def safe_send_message(bot: Bot, chat_id: str, text: str):
     """
     Безопасная отправка сообщения с логированием ошибок.

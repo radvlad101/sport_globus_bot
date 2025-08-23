@@ -41,7 +41,7 @@ ai21_client = AI21Client(api_key=AI21_API_KEY)
 
 
 from football_api import get_fixtures
-from football_posting import post_fixtures_with_odds
+from football_posting import post_fixtures_with_odds, filter_fixtures_next_week
 import asyncio
 
 
@@ -156,9 +156,14 @@ async def post_fixtures_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
     leagues = ["PL", "PD", "SA", "BL1", "FL1"]
     limit_matches = {"PL": 5, "PD": 3, "SA": 4, "BL1": 3, "FL1": 3}
 
-    fixtures_data = get_fixtures(leagues, API_KEY, limit_matches)
+    # fixtures_data = get_fixtures(leagues, API_KEY, limit_matches)
     # Внутри вашего async приложения
-    await post_fixtures_with_odds(context.application, fixtures_data)
+    fixtures = get_fixtures(leagues, API_KEY, limit_matches)
+    next_week_fixtures = filter_fixtures_next_week(fixtures, limit_matches)
+
+
+
+    await post_fixtures_with_odds(context.application, next_week_fixtures)
     await update.message.reply_text("📰 МАТЧИ опубліковано вручну!")
 
 
