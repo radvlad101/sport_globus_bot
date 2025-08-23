@@ -70,6 +70,20 @@ async def post_fixtures_with_odds(app, fixtures_data):
     missing_odds_count = 0
 
     for match in fixtures_data:
+        # Проверяем, что 'match' - это словарь
+        if not isinstance(match, dict):
+            logging.error(f"Неожиданный формат данных, элемент не является словарем: {match}")
+            continue  # Переходим к следующему элементу
+
+        # Проверяем, что 'homeTeam' - это словарь
+        if isinstance(match.get("homeTeam"), dict):
+            home = match["homeTeam"]["name"]
+        else:
+            # Обрабатываем случай, когда 'homeTeam' - это строка
+            home = match.get("homeTeam", "Неизвестная команда")
+
+        # И так далее для всех элементов, к которым вы обращаетесь
+        # ...
         home = match["homeTeam"]["name"]
         away = match["awayTeam"]["name"]
         utc_date = match["utcDate"]
