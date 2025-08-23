@@ -30,6 +30,27 @@ def calculate_probabilities(odds):
         logging.error(f"[ERROR] Ошибка расчёта вероятности: {e}")
         return {"home": 0, "draw": 0, "away": 0}
 
+import logging
+from telegram.error import TelegramError
+
+MAX_MESSAGE_LEN = 4096  # лимит Telegram
+
+async def safe_send_message(bot, chat_id, text: str):
+    """Безопасно отправляет сообщение в Telegram (режет, если > 4096)."""
+    try:
+        if len(text) <= MAX_MESSAGE_LEN:
+            await bot.send_message(chat_id=chat_id, text=text)
+            logging.info(f"[OK] Сообщение отправлено в {chat_id} (len={len(text)})")
+        else:
+            # разбиваем текст на части
+            parts = [text[i:i + MAX_MESSAGE_LEN] for i in range(0, len(text), MAX_MESSAGE_LEN)]
+            for idx, part in enumerate(parts, start=1):
+                await bot.send_message(chat_id=chat_id, text=part)
+                logging.info(f"[OK] Часть {idx}/{len(parts)} отправлена в {chat_id} (len={len(part)})")
+    except TelegramError as e:
+        logging.error(f"[FAIL] Ошибка при отправке в {chat_id}: {e}")
+
+
 async def post_fixtures_with_odds(app, fixtures_data):
     """
     Асинхронно постит матчи с прогнозами/odds в Telegram.
@@ -58,13 +79,12 @@ async def post_fixtures_with_odds(app, fixtures_data):
                 probs = calculate_probabilities(odds)
                 prob_text = f" | Вероятность: {home} {probs['home']}% - X {probs['draw']}% - {away} {probs['away']}%"
 
-            caption_lines.append(f"{match_time_str} — {home} vs {away}\n{odds_text}{prob_text}\n")
+            caption_lines.append(
+                f"{match_time_str} — {home} vs {away}\n{odds_text}{prob_text}\n"
+            )
 
         caption = "\n".join(caption_lines)
         logging.debug(f"[DEBUG] Пост для {league_name}:\n{caption}")
 
-        try:
-            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
-            logging.info(f"[INFO] Пост с матчами {league_name} успешно отправлен.")
-        except Exception as e:
-            logging.error(f"[ERROR] Ошибка при постинге матчей {league_name}: {e}")
+        # 🔹 безопасная отправка
+        await safe_send_message(app.bot, TELEGRAM_CHANNEL_ID, caption)
