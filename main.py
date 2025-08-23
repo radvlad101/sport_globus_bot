@@ -93,8 +93,8 @@ async def post_news(app: Application):
         return
 
     # Синхронный перевод
-    title_ru = translator.translate(news_en["title"], src="en", dest="ru").text
-    description_ru = translator.translate(news_en.get("description", ""), src="en", dest="ru").text
+    title_ru = await translator.translate(news_en["title"], src="en", dest="ru").text
+    description_ru = await translator.translate(news_en.get("description", ""), src="en", dest="ru").text
 
     # Английский пост
     caption_en = f"📰 {news_en['title']}\n\n{news_en.get('description', '')}\n\n🔗 Подробнее: {news_en['url']}"
