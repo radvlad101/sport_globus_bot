@@ -5,3 +5,4 @@ deep-translator
 requests==2.32.4
 python-dotenv==1.1.1
 feedparser
+python-telegram-bot[webhooks]==21.0.1
