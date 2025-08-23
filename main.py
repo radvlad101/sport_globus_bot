@@ -28,18 +28,26 @@ logging.basicConfig(level=logging.INFO)
 # --- AI21 ---
 ai21_client = AI21Client(api_key=AI21_API_KEY)
 
+
+
+
+
 import requests
 from datetime import datetime, timedelta
+from googletrans import Translator  # pip install googletrans==4.0.0-rc1
 
 API_KEY = "bd6718b87c854edc8baf0880ac7e6992"
+TELEGRAM_CHANNEL_ID = -1001234567890  # <- вставь цифровой chat_id канала
+
+translator = Translator()
 
 
-def get_latest_news():
+def get_latest_news(language="ru"):
     """
     Получает самую популярную футбольную новость за последние 24 часа с NewsAPI.org.
     """
     now = datetime.utcnow()
-    yesterday = now - timedelta(days=2)
+    yesterday = now - timedelta(days=1)
     from_date = yesterday.strftime("%Y-%m-%dT%H:%M:%S")
     to_date = now.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -48,9 +56,9 @@ def get_latest_news():
         "q": "football OR soccer",
         "from": from_date,
         "to": to_date,
-        "language": "ru",
+        "language": language,
         "sortBy": "popularity",
-        "pageSize": 10,
+        "pageSize": 5,
         "apiKey": API_KEY
     }
 
@@ -61,7 +69,7 @@ def get_latest_news():
 
     articles = response.json().get("articles", [])
     if not articles:
-        print("Нет новостей за последние 24 часа.")
+        print(f"Нет новостей за последние 24 часа на {language}")
         return None
 
     top_article = articles[0]
@@ -71,8 +79,32 @@ def get_latest_news():
         "summary": top_article.get("description", ""),
         "published": top_article["publishedAt"],
         "source": top_article["source"]["name"],
-        "image": top_article.get("urlToImage")  # ссылка на картинку
+        "image": top_article.get("urlToImage")
     }
+
+
+async def post_news(app):
+    from telegram import InputMediaPhoto
+
+    # --- Русская новость ---
+    news_ru = get_latest_news(language="ru")
+    if news_ru:
+        caption = f"📰 {news_ru['title']}\n\n{news_ru['summary']}\n\n🔗 Подробнее: {news_ru['link']}"
+        if news_ru.get("image"):
+            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_ru["image"], caption=caption)
+        else:
+            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
+
+    # --- Английская новость с переводом ---
+    news_en = get_latest_news(language="en")
+    if news_en:
+        title_ru = translator.translate(news_en["title"], src="en", dest="ru").text
+        summary_ru = translator.translate(news_en.get("summary", ""), src="en", dest="ru").text
+        caption = f"📰 {title_ru}\n\n{summary_ru}\n\n🔗 Подробнее: {news_en['link']}"
+        if news_en.get("image"):
+            await app.bot.send_photo(chat_id=TELEGRAM_CHANNEL_ID, photo=news_en["image"], caption=caption)
+        else:
+            await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=caption)
 
 
 
@@ -91,20 +123,7 @@ def summarize_text(text: str) -> str:
         logging.error(f"AI21 ошибка: {e}")
         return None
 
-# --- Постинг новости ---
-async def post_news(app: Application):
-    news = get_latest_news()
-    if not news:
-        return
-    summary = summarize_text(news["summary"] or news["title"])
-    if not summary:
-        summary = "❌ Не удалось получить суммаризацию."
-    message = f"📰 {news['title']}\n\n{summary}\n\n🔗 Подробнее: {news['link']}"
-    try:
-        await app.bot.send_message(chat_id=TELEGRAM_CHANNEL_ID, text=message)
-        logging.info("✅ Новость опубликована")
-    except Exception as e:
-        logging.error(f"Ошибка публикации: {e}")
+
 
 # --- Команда /post_now ---
 async def post_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
