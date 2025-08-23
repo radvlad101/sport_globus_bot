@@ -39,7 +39,7 @@ def get_latest_news():
     Получает самую популярную футбольную новость за последние 24 часа с NewsAPI.org.
     """
     now = datetime.utcnow()
-    yesterday = now - timedelta(days=3)
+    yesterday = now - timedelta(days=2)
     from_date = yesterday.strftime("%Y-%m-%dT%H:%M:%S")
     to_date = now.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -48,7 +48,7 @@ def get_latest_news():
         "q": "football OR soccer",
         "from": from_date,
         "to": to_date,
-        "language": "en",
+        "language": "ru",
         "sortBy": "popularity",
         "pageSize": 10,
         "apiKey": API_KEY
