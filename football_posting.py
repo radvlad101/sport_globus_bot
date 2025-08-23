@@ -1,6 +1,7 @@
 # football_posting.py
 import logging
 from datetime import datetime
+from telegram import Bot
 
 TELEGRAM_CHANNEL_ID = "@sport_globus"  # замените на ваш канал
 
@@ -13,116 +14,61 @@ LEAGUE_NAMES = {
     "CL": "Лига Чемпионов",
     "EL": "Лига Европы"
 }
-
-def calculate_probabilities(odds):
+async def safe_send_message(bot: Bot, chat_id: str, text: str):
     """
-    Рассчитывает вероятность исхода на основе коэффициентов.
-    Возвращает словарь {'home': %, 'draw': %, 'away': %}.
+    Безопасная отправка сообщения с логированием ошибок.
     """
     try:
-        p1, x, p2 = odds["homeWin"], odds["draw"], odds["awayWin"]
-        inv_total = 1/p1 + 1/x + 1/p2
-        prob_home = round((1/p1)/inv_total*100)
-        prob_draw = round((1/x)/inv_total*100)
-        prob_away = round((1/p2)/inv_total*100)
-        return {"home": prob_home, "draw": prob_draw, "away": prob_away}
+        await bot.send_message(chat_id=chat_id, text=text)
+        logging.info("[INFO] Сообщение успешно отправлено")
     except Exception as e:
-        logging.error(f"[ERROR] Ошибка расчёта вероятности: {e}")
-        return {"home": 0, "draw": 0, "away": 0}
-
-import logging
-from telegram.error import TelegramError
-
-MAX_MESSAGE_LEN = 4096  # лимит Telegram
-
-async def safe_send_message(bot, chat_id, text: str):
-    """Безопасно отправляет сообщение в Telegram (режет, если > 4096)."""
-    try:
-        if len(text) <= MAX_MESSAGE_LEN:
-            await bot.send_message(chat_id=chat_id, text=text)
-            logging.info(f"[OK] Сообщение отправлено в {chat_id} (len={len(text)})")
-        else:
-            # разбиваем текст на части
-            parts = [text[i:i + MAX_MESSAGE_LEN] for i in range(0, len(text), MAX_MESSAGE_LEN)]
-            for idx, part in enumerate(parts, start=1):
-                await bot.send_message(chat_id=chat_id, text=part)
-                logging.info(f"[OK] Часть {idx}/{len(parts)} отправлена в {chat_id} (len={len(part)})")
-    except TelegramError as e:
-        logging.error(f"[FAIL] Ошибка при отправке в {chat_id}: {e}")
-
-
-import logging
-
-async def safe_send_message(app, chat_id, text):
-    """Безопасная отправка сообщений с логированием ошибок"""
-    try:
-        await app.bot.send_message(chat_id=chat_id, text=text)
-        logging.info("[DEBUG] Сообщение успешно отправлено в %s", chat_id)
-    except Exception as e:
-        logging.error("[ERROR] Ошибка при отправке сообщения в %s: %s", chat_id, e)
+        logging.error(f"[ERROR] Ошибка при отправке сообщения: {e}")
 
 
 async def post_fixtures_with_odds(app, fixtures_data):
-    """Формируем и постим список матчей с коэффициентами"""
-    logging.info("[DEBUG] Начинаем формирование поста (матчей: %s)", len(fixtures_data))
+    """
+    Асинхронно постит матчи с прогнозами/odds в Telegram.
+    fixtures_data: dict с лигами -> списком матчей
+    """
+    for league_code, matches in fixtures_data.items():
+        if not matches:
+            logging.info(f"[DEBUG] Нет матчей для лиги {league_code}")
+            continue
 
-    post_lines = []
-    missing_odds_count = 0
+        league_name = LEAGUE_NAMES.get(league_code, league_code)
+        logging.info(f"[DEBUG] Начинаем формирование поста для лиги {league_name} ({len(matches)} матчей)")
 
-    for match in fixtures_data:
-        # Проверяем, что 'match' - это словарь
-        if not isinstance(match, dict):
-            logging.error(f"Неожиданный формат данных, элемент не является словарем: {match}")
-            continue  # Переходим к следующему элементу
+        caption_lines = [f"⚽ Ближайшие матчи — {league_name}\n"]
 
-        # Проверяем, что 'homeTeam' - это словарь
-        if isinstance(match.get("homeTeam"), dict):
-            home = match["homeTeam"]["name"]
-        else:
-            # Обрабатываем случай, когда 'homeTeam' - это строка
-            home = match.get("homeTeam", "Неизвестная команда")
+        for match in matches:
+            # Проверяем, что match это dict
+            if not isinstance(match, dict):
+                logging.warning(f"[WARN] Неверный формат матча: {match}")
+                continue
 
-        # И так далее для всех элементов, к которым вы обращаетесь
-        # ...
-        home = match["homeTeam"]["name"]
-        away = match["awayTeam"]["name"]
-        utc_date = match["utcDate"]
+            home = match.get("homeTeam", {}).get("name", "Unknown")
+            away = match.get("awayTeam", {}).get("name", "Unknown")
+            utc_date = match.get("utcDate", "Unknown date")
 
-        # Коэффициенты
-        if "odds" in match and match["odds"]:
-            odds = match["odds"]
+            # Преобразуем дату в читаемый формат
+            try:
+                match_time = datetime.fromisoformat(utc_date.replace("Z", "+00:00"))
+                match_time_str = match_time.strftime("%d.%m %H:%M UTC")
+            except Exception:
+                match_time_str = utc_date
 
-            home_odds = odds.get("homeWin", "—")
-            draw_odds = odds.get("draw", "—")
-            away_odds = odds.get("awayWin", "—")
-
-            odds_text = f"П1: {home_odds} X: {draw_odds} П2: {away_odds}"
-
-            # Если все три коэффициента есть → считаем вероятность
-            if all(isinstance(x, (int, float)) for x in [home_odds, draw_odds, away_odds]):
-                probs = calculate_probabilities(odds)
-                prob_text = (
-                    f" | Вероятность: {home} {probs['home']}% - "
-                    f"X {probs['draw']}% - {away} {probs['away']}%"
-                )
+            # Безопасная обработка odds
+            odds = match.get("odds", {})
+            if "homeWin" in odds and "draw" in odds and "awayWin" in odds:
+                odds_text = f"П1: {odds['homeWin']} X: {odds['draw']} П2: {odds['awayWin']}"
             else:
-                prob_text = ""
-                missing_odds_count += 1
+                odds_text = "Коэффициенты недоступны (только платный план)"
 
-        else:
-            odds_text = "Коэффициенты пока не доступны"
-            prob_text = ""
-            missing_odds_count += 1
+            caption_lines.append(f"{match_time_str} — {home} vs {away}\n{odds_text}\n")
 
-        post_lines.append(f"{home} vs {away} ({utc_date})\n{odds_text}{prob_text}")
+        # Составляем весь пост
+        caption = "\n".join(caption_lines)
+        logging.debug(f"[DEBUG] Пост для {league_name}:\n{caption}")
 
-    # Сборка поста
-    post_text = "⚽ Ближайшие матчи:\n\n" + "\n\n".join(post_lines)
-
-    # Логируем инфо
-    logging.info("[DEBUG] Пост сформирован. Всего матчей: %s | Без коэффициентов: %s",
-                 len(fixtures_data), missing_odds_count)
-
-    # Отправка в канал
-    await safe_send_message(app, "@sport_globus", post_text)
-
+        # Отправка в Telegram
+        await safe_send_message(app.bot, TELEGRAM_CHANNEL_ID, caption)
