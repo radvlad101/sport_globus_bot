@@ -97,7 +97,8 @@ async def post_news(app):
     # --- Английская новость с переводом ---
     news_en = get_latest_news(language="en")
     if news_en:
-        title_ru = translator.translate(news_en["title"], src="en", dest="ru").text
+        translation = await translator.translate(news_en["title"], src="en", dest="ru")
+        title_ru = translation.text
         summary_ru = translator.translate(news_en.get("summary", ""), src="en", dest="ru").text
         caption = f"📰 {title_ru}\n\n{summary_ru}\n\n🔗 Подробнее: {news_en['link']}"
         if news_en.get("image"):
