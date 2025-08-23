@@ -23,7 +23,7 @@ def filter_fixtures_next_week(fixtures_data, limit_matches):
     limit_matches: dict с лигами -> максимальное количество матчей
     """
     now = datetime.now(timezone.utc)
-    next_week = now + timedelta(days=30)
+    next_week = now + timedelta(days=120)
 
     upcoming_fixtures = {}
 
