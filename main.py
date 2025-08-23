@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 # Новий імпорт для асинхронного перекладача
 #from googletrans import AsyncTranslator
 from deep_translator import GoogleTranslator
+from football_api import get_fixtures
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
 
@@ -27,6 +28,8 @@ TELEGRAM_CHANNEL_ID = "@sport_globus"
 AI21_API_KEY = "f46255e8-8dfb-4bdb-abf0-cc8eb4450cd0"
 WEBHOOK_URL = "https://sport-globus-bot.onrender.com/webhook"  # Замініть на ваш URL від Render.com
 
+FOOTBALL_API_KEY = "1a351adf0f2692224a02a9741f5039e7"     # https://dashboard.api-football.com/profile?access
+
 API_KEY = "bd6718b87c854edc8baf0880ac7e6992"
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +37,14 @@ logging.basicConfig(level=logging.INFO)
 # Ініціалізація клієнтів
 ai21_client = AI21Client(api_key=AI21_API_KEY)
 #translator = AsyncTranslator()
+
+
+from football_api import get_fixtures
+from football_posting import post_fixtures_with_odds
+import asyncio
+
+
+
 
 
 # Функція отримання новин
@@ -137,9 +148,23 @@ def summarize_text(text: str) -> str:
         logging.error(f"AI21 помилка: {e}")
         return None
 
+async def post_fixtures_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Публікує новину в канал за командою."""
+
+    API_KEY = "8c614bb489684b5db605738b43650d89"
+    leagues = ["PL", "PD", "SA", "BL1", "FL1"]
+    limit_matches = {"PL": 5, "PD": 3, "SA": 4, "BL1": 3, "FL1": 3}
+
+    fixtures_data = get_fixtures(leagues, API_KEY, limit_matches)
+    # Внутри вашего async приложения
+    await post_fixtures_with_odds(context.application, fixtures_data)
+    await update.message.reply_text("📰 МАТЧИ опубліковано вручну!")
+
+
+
 
 # Команда /post_now
-async def post_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def post_news_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Публікує новину в канал за командою."""
     await post_news(context.application)
     await update.message.reply_text("📰 Новину опубліковано вручну!")
@@ -149,7 +174,8 @@ async def post_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     try:
         app = Application.builder().token(TELEGRAM_TOKEN).build()
-        app.add_handler(CommandHandler("post_now", post_now))
+        app.add_handler(CommandHandler("post_news_now", post_news_now))
+        app.add_handler(CommandHandler("post_fixtures_now", post_fixtures_now))
 
         # Використання web-сервера для webhook
         port = int(os.environ.get("PORT", 5000))
