@@ -135,3 +135,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    news = get_latest_news()
+    if news:
+        print("📰", news["title"])
+        print("🔗", news["link"])
+        print("📝", news["summary"])
+        print("🖼", news["image"])
