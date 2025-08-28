@@ -76,7 +76,7 @@ async def main():
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
-        secret_token=TELEGRAM_TOKEN,  # It's good practice to use a secret token
+        #secret_token=TELEGRAM_TOKEN,  # It's good practice to use a secret token
     )
 
     # Register handlers on the web server
