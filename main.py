@@ -109,7 +109,7 @@ async def main():
     logger.info("✅ Бот зупинено.")
 
 
-if __name__ == "__main1__":
+if __name__ == "__main__":
     import asyncio
     try:
         asyncio.run(main())
