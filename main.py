@@ -41,8 +41,8 @@ async def post_news_now(message: Message, bot: Bot):
 @router.message(Command("post_fixtures_now"))
 async def post_fixtures_now(message: Message, bot: Bot):
 
-    sport ='soccer_germany_bundesliga'
-    date_event = date.today() + timedelta(days=3)
+    sport ='soccer_epl'
+    date_event = date.today() + timedelta(days=2)
     #def get_events_by_sport_and_date(sport: str, date_from: datetime, date_to: datetime) -> List[Dict[str, Any]]:
     events = get_events_by_sport_and_date(sport, date_event, date_event)
 
