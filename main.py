@@ -112,7 +112,7 @@ async def main():
 if __name__ == "__main__":
     import asyncio
 
-    logger.basicConfig(level=logger.INFO)
+
     try:
         asyncio.run(main())
     except Exception as e:
