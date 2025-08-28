@@ -1,4 +1,4 @@
-#main1.py
+#main.py
 
 import logging
 import os
