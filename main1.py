@@ -1,4 +1,4 @@
-#main.py
+#main1.py
 
 import logging
 import os
@@ -23,9 +23,7 @@ from config import TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID, AI21_API_KEY,WEBHOOK_URL
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 router = Router()
-bot = Bot(token=TELEGRAM_TOKEN)
-dp = Dispatcher()
-dp.include_router(router)
+
 
 
 @router.message(Command("post_news_now"))
@@ -65,8 +63,9 @@ async def main():
         return
 
     # Initialize bot and dispatcher
-
-
+    bot = Bot(token=TELEGRAM_TOKEN)
+    dp = Dispatcher()
+    dp.include_router(router)
 
     # Register handlers
     dp.message.register(post_news_now, Command("post_news_now"))
@@ -110,7 +109,7 @@ async def main():
     logger.info("✅ Бот зупинено.")
 
 
-if __name__ == "__main__":
+if __name__ == "__main1__":
     import asyncio
     try:
         asyncio.run(main())
