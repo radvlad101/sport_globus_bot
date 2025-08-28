@@ -76,7 +76,7 @@ def odds_events(sport,commenceTimeFrom,commenceTimeTo):
 #empty_badge =0
 
 def get_badge(team):
-    global empty_badge
+    #global empty_badge
     badge = ''
     base_url = f"https://www.thesportsdb.com/api/v1/json/123/searchteams.php?"
     params = {
@@ -84,7 +84,7 @@ def get_badge(team):
     }
     resp = requests.get(base_url, params=params).json()
     if resp==None or resp['teams']==None:
-        empty_badge+=1
+        #empty_badge+=1
         return badge
     badge = resp.get("teams", [{}])[0].get("strBadge")
     return badge
@@ -129,12 +129,12 @@ def get_events_by_sport_and_date(sport: str, date_from: datetime, date_to: datet
             event['away_team_badge'] = badge
 
     return events
-
+"""
 date_event = date.today() + timedelta(days=3)
 events = get_events_by_sport_and_date('soccer_germany_bundesliga',date_event,date_event)
 print(f"{events}")
 print("empty_badge"+ str(empty_badge))
-
+"""
 
 
 
