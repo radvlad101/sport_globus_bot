@@ -90,7 +90,7 @@ async def main():
     site = web.TCPSite(runner, '0.0.0.0', port)
 
     # Set the webhook URL on the Telegram side
-    await bot.set_webhook(url=WEBHOOK_URL + "/webhook")
+    await bot.set_webhook(url=WEBHOOK_URL)
 
     logger.info("✅ Бот успішно запущено!")
 
