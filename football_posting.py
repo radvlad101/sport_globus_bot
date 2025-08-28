@@ -7,6 +7,7 @@ from aiogram.types import InputMediaPhoto
 
 
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,87 @@ async def post_news(bot,TELEGRAM_CHANNEL_ID,article_data):
 
 
 
-#async def post_fixtures( context: ContextTypes.DEFAULT_TYPE, TELEGRAM_CHANNEL_ID ,events, strLeagueBadge):
 
 async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], str_league_badge: str):
     """
+    Отправляет посты о предстоящих матчах в Telegram-канал.
+
+    Args:
+        bot (Bot): Объект бота aiogram.
+        telegram_channel_id (str): ID Telegram-канала.
+        events (List[Dict]): Список матчей.
+        str_league_badge (str): URL эмблемы лиги.
+    """
+    for event in events:
+        home_team = event.get('home_team', 'N/A')
+        away_team = event.get('away_team', 'N/A')
+        commence_time = event.get('commence_time', 'N/A')
+
+        # Проверка бейджей
+        home_badge = event.get('home_team_badge')
+        away_badge = event.get('away_team_badge')
+
+        home_badge = home_badge if home_badge and home_badge.startswith("http") else "⚽️"
+        away_badge = away_badge if away_badge and away_badge.startswith("http") else "⚽️"
+        league_badge = str_league_badge if str_league_badge and str_league_badge.startswith("http") else "⚽️"
+
+        # Собираем информацию о коэффициентах
+        bookmakers = event.get('bookmakers', [])
+        odds_text = ""
+        if bookmakers:
+            for bm in bookmakers:
+                bm_title = bm.get('title', 'N/A')
+                odds_text += f"<b>{html.escape(bm_title)}:</b>\n"
+                markets = bm.get('markets', [])
+                if markets:
+                    for market in markets:
+                        if market.get('key') == 'h2h':
+                            outcomes = market.get('outcomes', [])
+                            for outcome in outcomes:
+                                name = outcome.get('name', 'N/A')
+                                price = outcome.get('price', 'N/A')
+                                odds_text += f"  • {html.escape(name)}: {price}\n"
+                odds_text += "\n"
+
+        # Формируем текст сообщения
+        message_text = (
+            f"<b>Матч:</b> {html.escape(home_team)} vs {html.escape(away_team)}\n"
+            f"<b>Время начала:</b> {html.escape(commence_time.replace('T', ' ').replace('Z', ' UTC'))}\n"
+            f"-----------------------------------\n"
+            f"{odds_text}"
+        )
+
+        # Подготавливаем медиа для отправки
+        media = []
+        if league_badge != "⚽️":
+            media.append(InputMediaPhoto(media=league_badge, caption=f"🗓️ Предстоящий матч: {home_team} vs {away_team}"))
+        if home_badge != "⚽️":
+            media.append(InputMediaPhoto(media=home_badge))
+        if away_badge != "⚽️":
+            media.append(InputMediaPhoto(media=away_badge))
+
+        try:
+            # Отправляем медиа-группу, если есть хотя бы одно изображение
+            if media:
+                await bot.send_media_group(chat_id=telegram_channel_id, media=media)
+            else:
+                # Если нет изображений, просто отправляем текст
+                await bot.send_message(chat_id=telegram_channel_id, text=f"⚽️ {home_team} vs {away_team}")
+
+            # Отправляем подробное сообщение с коэффициентами
+            await bot.send_message(chat_id=telegram_channel_id, text=message_text, parse_mode="HTML")
+
+        except Exception as e:
+            print(f"Не удалось отправить событие в Telegram: {e}")
+
+
+
+
+#async def post_fixtures( context: ContextTypes.DEFAULT_TYPE, TELEGRAM_CHANNEL_ID ,events, strLeagueBadge):
+"""
+async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], str_league_badge: str):
+    """
+"""
     Отправляет посты о предстоящих матчах в Telegram-канал, используя aiogram.
 
     Args:
@@ -43,6 +121,7 @@ async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], 
         events (List[Dict]): Список словарей, каждый из которых представляет предстоящий матч.
         str_league_badge (str): URL-адрес эмблемы лиги.
     """
+"""
     for event in events:
         home_team = event.get('home_team', 'N/A')
         away_team = event.get('away_team', 'N/A')
@@ -100,4 +179,4 @@ async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], 
             )
 
         except Exception as e:
-            print(f"Не удалось отправить событие в Telegram: {e}")
+            print(f"Не удалось отправить событие в Telegram: {e}")"""
