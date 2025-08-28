@@ -78,6 +78,7 @@ def odds_events(sport,commenceTimeFrom,commenceTimeTo):
 def get_badge(team):
     #global empty_badge
     badge = ''
+
     base_url = f"https://www.thesportsdb.com/api/v1/json/123/searchteams.php?"
     params = {
         "t": team  # пробелы автоматически закодируются
