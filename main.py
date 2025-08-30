@@ -42,7 +42,7 @@ async def post_news_now(message: Message, bot: Bot):
 async def post_fixtures_now(message: Message, bot: Bot):
 
     sport ='soccer_epl'
-    date_event = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
+    date_event = (date.today() + timedelta(days=0)).strftime("%Y-%m-%d")
     #def get_events_by_sport_and_date(sport: str, date_from: datetime, date_to: datetime) -> List[Dict[str, Any]]:
     events = get_events_by_sport_and_date(sport, date_event, date_event)
 
