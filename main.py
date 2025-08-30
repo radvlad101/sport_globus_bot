@@ -42,14 +42,15 @@ async def post_news_now(message: Message, bot: Bot):
 async def post_fixtures_now(message: Message, bot: Bot):
 
     sport ='soccer_epl'
-    date_event = date.today() + timedelta(days=2)
+    date_event = (date.today() + timedelta(days=2)).strftime("%Y-%m-%d")
     #def get_events_by_sport_and_date(sport: str, date_from: datetime, date_to: datetime) -> List[Dict[str, Any]]:
     events = get_events_by_sport_and_date(sport, date_event, date_event)
 
     #def get_league_badge(leagues_data: List[Dict[str, str]], league_name: str, default: str = '') -> str:
-    str_league_badge = get_league_badge (strLeagueBadges,sport)
+    #str_league_badge = get_league_badge (strLeagueBadges,sport)
 
     #async def post_fixtures(bot: Bot, telegram_channel_id: str, events: list, str_league_badge: str):
+    str_league_badge = 'https://r2.thesportsdb.com/images/media/event/banner/30iijx1750328297.jpg'
     await post_fixtures(bot,TELEGRAM_CHANNEL_ID, events, str_league_badge)
     await message.reply("Розклад матчів буде опубліковано!")
 

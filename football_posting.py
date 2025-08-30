@@ -1,10 +1,10 @@
 #football_posting.py
+
 import logging
 import html
 from typing import List, Dict
 from aiogram import Bot
 from aiogram.types import InputMediaPhoto
-
 
 
 
@@ -31,10 +31,139 @@ async def post_news(bot,TELEGRAM_CHANNEL_ID,article_data):
 
 
 
+"""
+from aiogram import Bot
+from aiogram.types import InputMediaPhoto
+from typing import List, Dict
+import html
+import logging
+
+# Создаём собственный логер
+logger = logging.getLogger("telegram_bot")
+logger.setLevel(logging.INFO)  # можно DEBUG для подробной отладки
+
+# Настройка обработчика (вывод в консоль)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)"""
 
 
+async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], banner: str):
+    """
+    Отправляет посты о предстоящих матчах в Telegram-канал.
+
+    Args:
+        bot (Bot): Объект бота aiogram.
+        telegram_channel_id (str): ID Telegram-канала.
+        events (List[Dict]): Список матчей.
+        banner (str): URL баннера события.
+    """
+    for event in events:
+        home_team = event.get('home_team', 'N/A')
+        away_team = event.get('away_team', 'N/A')
+        commence_time = event.get('commence_time', 'N/A')
+
+        # Проверка баннера
+        banner_url = banner if banner and banner.startswith("http") else None
+
+        # Собираем информацию о коэффициентах
+        bookmakers = event.get('bookmakers', [])
+        odds_text = ""
+        if bookmakers:
+            for bm in bookmakers:
+                bm_title = bm.get('title', 'N/A')
+                odds_text += f"<b>{html.escape(bm_title)}:</b>\n"
+                markets = bm.get('markets', [])
+                if markets:
+                    for market in markets:
+                        if market.get('key') == 'h2h':
+                            outcomes = market.get('outcomes', [])
+                            for outcome in outcomes:
+                                name = outcome.get('name', 'N/A')
+                                price = outcome.get('price', 'N/A')
+                                odds_text += f"  • {html.escape(name)}: {price}\n"
+                odds_text += "\n"
+
+        # Формируем текст сообщения
+        message_text = (
+            f"<b>Матч:</b> {html.escape(home_team)} vs {html.escape(away_team)}\n"
+            f"<b>Время начала:</b> {html.escape(commence_time.replace('T', ' ').replace('Z', ' UTC'))}\n"
+            f"-----------------------------------\n"
+            f"{odds_text}"
+        )
+
+        try:
+            # Отправляем баннер, если он есть
+            if banner_url:
+                await bot.send_photo(
+                    chat_id=telegram_channel_id,
+                    photo=banner_url,
+                    caption=f"🗓️ Предстоящий матч: {home_team} vs {away_team}"
+                )
+                logger.info(f"Отправлен баннер для {home_team} vs {away_team}")
+            else:
+                # Если баннера нет — fallback
+                await bot.send_message(
+                    chat_id=telegram_channel_id,
+                    text=f"⚽️ {home_team} vs {away_team}"
+                )
+                logger.warning(f"Нет баннера для {home_team} vs {away_team}")
+
+            # Отправляем подробное сообщение с коэффициентами
+            await bot.send_message(
+                chat_id=telegram_channel_id,
+                text=message_text,
+                parse_mode="HTML"
+            )
+            logger.info(f"Отправлено сообщение с коэффициентами для {home_team} vs {away_team}")
+
+        except Exception as e:
+            logger.error(f"Не удалось отправить событие в Telegram: {e}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], str_league_badge: str):
     """
+"""
     Отправляет посты о предстоящих матчах в Telegram-канал.
 
     Args:
@@ -43,6 +172,7 @@ async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], 
         events (List[Dict]): Список матчей.
         str_league_badge (str): URL эмблемы лиги.
     """
+"""
     for event in events:
         home_team = event.get('home_team', 'N/A')
         away_team = event.get('away_team', 'N/A')
@@ -109,7 +239,7 @@ async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], 
 
 
 #async def post_fixtures( context: ContextTypes.DEFAULT_TYPE, TELEGRAM_CHANNEL_ID ,events, strLeagueBadge):
-"""
+
 async def post_fixtures(bot: Bot, telegram_channel_id: str, events: List[Dict], str_league_badge: str):
     """
 """

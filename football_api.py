@@ -58,7 +58,7 @@ def format_date_with_flag(date: str, commence_flag: str) -> str:
                          "Допустимые значения: 'commenceTimeFrom', 'commenceTimeTo'")
 
 
-def odds_events(sport,commenceTimeFrom,commenceTimeTo):
+def get_odds_api_events(sport, commenceTimeFrom, commenceTimeTo):
 
     base_url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
     params = {
@@ -109,12 +109,11 @@ def clean_team_name(team_name: str) -> str:
 
 #odds_events()
 # sport = 'soccer_germany_bundesliga'
-def get_events_by_sport_and_date(sport: str, date_from: datetime, date_to: datetime) -> List[Dict[str, Any]]:
-    date_from_str = date_from.strftime("%Y-%m-%d")
-    date_to_str = date_to.strftime("%Y-%m-%d")
-    commenceTimeFrom = format_date_with_flag(date_from_str,"commenceTimeFrom")
-    commenceTimeTo = format_date_with_flag(date_to_str,"commenceTimeTo")
-    events = odds_events (sport,commenceTimeFrom,commenceTimeTo)
+def get_events_by_sport_and_date(sport: str, date_from: str, date_to: str) -> List[Dict[str, Any]]:
+
+    commenceTimeFrom = format_date_with_flag(date_from,"commenceTimeFrom")
+    commenceTimeTo = format_date_with_flag(date_to,"commenceTimeTo")
+    events = get_odds_api_events (sport, commenceTimeFrom, commenceTimeTo)
 
     print(f"{events}")
     for event in events:

@@ -1,4 +1,4 @@
-# config.py
+#config.py
 # TELEGRAM DATA
 
 # TELEGRAM BOT  @sport_globus_bot
@@ -44,10 +44,18 @@ API_KEY_thesportsdb ='123' #free plan
 'Ukrainian Premier League''4354'
 """
 
+
 leagues = ['English Premier League','Spanish La Liga','German Bundesliga','Italian Serie A','Russian Football Premier League','Ukrainian Premier League']
 #leagues = ['English Premier League']
 
 #Бесплатные или условно-бесплатные источники odds https://the-odds-api.com
+
+league_odds_api_to_thesportsdb = {
+    'soccer_epl':'English Premier League','soccer_spain_la_liga':'Spanish La Liga',
+    'soccer_germany_bundesliga':'German Bundesliga','soccer_italy_serie_a':'Italian Serie A'
+}
+team_odds_api_to_thesportsdb= {'home_team': 'strHomeTeam', 'away_team': 'strAwayTeam'}
+
 """
 "key":
 'soccer_epl' 'soccer_spain_la_liga'  'soccer_germany_bundesliga' 'soccer_italy_serie_a'    '' '' '' '' '' '' '' '' '' '' '' 
