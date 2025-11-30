@@ -5,7 +5,7 @@
 TELEGRAM_TOKEN = "8495882876:AAH1xwbeyOqPRkquvz7aijF5iHa6US3IgNg"
 
 # TELEGRAM CHANNEL @sport_globus
-TELEGRAM_CHANNEL_ID = "@sport_globus"
+TELEGRAM_CHANNEL_ID = "@football_plus_plus"
 
 # Хост Render.com  URL+ /webhook   для TELEGRAM BOT
 WEBHOOK_URL = "https://sport-globus-bot.onrender.com/webhook"
